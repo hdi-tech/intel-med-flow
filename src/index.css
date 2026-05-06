@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Fugaz+One&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 33% 97%;
+    --foreground: 213 52% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 213 52% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 52% 12%;
+    --primary: 156 68% 37%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 207 37% 64%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 207 25% 95%;
+    --muted-foreground: 207 25% 46%;
+    --accent: 207 54% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 203 53% 88%;
+    --input: 203 53% 88%;
+    --ring: 156 68% 37%;
+    --radius: 0.625rem;
+    --hdi-bg-dark: 213 54% 12%;
+    --hdi-bg-navy: 210 48% 18%;
+    --hdi-teal: 156 68% 37%;
+    --hdi-teal-light: 156 50% 58%;
+    --hdi-sky: 207 37% 64%;
+    --hdi-blue: 207 54% 40%;
+    --hdi-off-white: 220 20% 96%;
+    --hdi-light-bg: 210 33% 97%;
+    --hdi-muted-text: 207 25% 46%;
+    --hdi-border: 203 53% 88%;
+    --hdi-footer: 213 62% 7%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 213 54% 12%;
+    --foreground: 220 20% 96%;
+    --card: 210 48% 18%;
+    --card-foreground: 220 20% 96%;
+    --popover: 210 48% 18%;
+    --popover-foreground: 220 20% 96%;
+    --primary: 156 68% 37%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 207 37% 64%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 48% 18%;
+    --muted-foreground: 207 25% 65%;
+    --accent: 207 54% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 30% 25%;
+    --input: 210 30% 25%;
+    --ring: 156 68% 37%;
+    --sidebar-background: 213 54% 12%;
+    --sidebar-foreground: 220 20% 96%;
+    --sidebar-primary: 156 68% 37%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 48% 18%;
+    --sidebar-accent-foreground: 220 20% 96%;
+    --sidebar-border: 210 30% 25%;
+    --sidebar-ring: 156 68% 37%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+}
+
+/* ============================================================
+   GLOBAL TYPOGRAPHY OVERRIDE
+   Aligned to HDI logo (Fugaz One geometric) using Manrope
+   as a clean geometric sans family member. Force-overrides
+   ensure no thin/light weights or serif headings sneak in.
+   ============================================================ */
+
+:root {
+  --font-primary: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fugaz One', 'Manrope', sans-serif;
+}
+
+html, body {
+  font-family: var(--font-primary) !important;
+}
+
+/* Force everything off serif/script fallbacks */
+.font-serif, .font-mono {
+  font-family: var(--font-primary) !important;
+}
+
+body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* ── HEADINGS: HDI-aligned scale ─────────────────────────── */
+h1 {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  letter-spacing: -1px !important;
+}
+@media (min-width: 768px) {
+  h1 { font-size: 38px !important; }
+}
+@media (min-width: 1024px) {
+  h1 { font-size: 64px !important; }
+}
+
+h2 {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.5px !important;
+}
+@media (min-width: 768px) {
+  h2 { font-size: 32px !important; }
+}
+@media (min-width: 1024px) {
+  h2 { font-size: 42px !important; }
+}
+
+h3 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+@media (min-width: 768px) {
+  h3 { font-size: 22px !important; }
+}
+@media (min-width: 1024px) {
+  h3 { font-size: 28px !important; }
+}
+
+h4 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+}
+@media (min-width: 768px) {
+  h4 { font-size: 20px !important; }
+}
+
+h5 { font-size: 17px; font-weight: 700 !important; line-height: 1.3; }
+h6 { font-size: 16px; font-weight: 700 !important; line-height: 1.3; }
+
+p {
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+input, textarea, select {
+  font-size: 15px;
+  font-weight: 400;
+}
+input::placeholder, textarea::placeholder {
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+button {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ── HARD KILLS (must use !important) ─────────────────────── */
+
+/* Kill ALL thin/light weights from Tailwind utilities */
+.font-thin,
+.font-extralight,
+.font-light {
+  font-weight: 400 !important;
+}
+
+/* Bump ultra-tiny text up to 12px minimum for legibility */
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 12px !important;
+}
+
+/* Text opacity guard - never below 0.65 for readable text on text-only elements */
+p.opacity-50, span.opacity-50, p.opacity-40, span.opacity-40,
+p.opacity-30, span.opacity-30, p.opacity-20, span.opacity-20 {
+  opacity: 0.7 !important;
+}

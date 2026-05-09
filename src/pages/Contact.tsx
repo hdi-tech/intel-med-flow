@@ -87,7 +87,14 @@ const Contact = () => {
                   </svg>
                   <div>
                     <p className="font-sans text-xs uppercase tracking-wider mb-1" style={{ color: "#7AAECC" }}>WhatsApp</p>
-                    <p className="font-sans text-sm" style={{ color: "rgba(240,242,245,0.5)" }}>Coming soon</p>
+                    <a
+                      href="https://wa.me/971541611475"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-sans text-sm text-hdi-off-white hover:underline"
+                    >
+                      +971 54 161 1475
+                    </a>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

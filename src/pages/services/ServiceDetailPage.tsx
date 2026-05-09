@@ -11,7 +11,7 @@ interface ServiceConfig {
   title: string;
   accentWord: string;
   specialist: string;
-  categoryName: string;
+  categoryKeyword: string;
   workflow: string[];
 }
 
@@ -21,7 +21,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     title: "Aligner",
     accentWord: "Design",
     specialist: "Orthodontist",
-    categoryName: "Clear Aligners",
+    categoryKeyword: "aligner",
     workflow: [
       "Upload STL / CBCT files",
       "Orthodontist review",
@@ -35,7 +35,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     title: "Surgical Guide",
     accentWord: "Design",
     specialist: "Implantologist",
-    categoryName: "Surgical Guides",
+    categoryKeyword: "surgical",
     workflow: [
       "Upload CBCT + intraoral scan",
       "Implantologist planning",
@@ -49,7 +49,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     title: "Crown & Bridge",
     accentWord: "Design",
     specialist: "Qualified Dentist",
-    categoryName: "Crowns & Bridges",
+    categoryKeyword: "crown",
     workflow: [
       "Upload intraoral scan",
       "Shade & occlusion analysis",
@@ -63,7 +63,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     title: "CBCT",
     accentWord: "Reporting",
     specialist: "OMF Radiologist",
-    categoryName: "CBCT Reports & Analysis",
+    categoryKeyword: "cbct",
     workflow: [
       "Upload DICOM files",
       "Radiologist assignment",
@@ -77,7 +77,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     title: "Medical Radiology",
     accentWord: "Reporting",
     specialist: "Board-certified Radiologist",
-    categoryName: "Medical Radiology",
+    categoryKeyword: "radiology",
     workflow: [
       "Upload imaging files",
       "Specialist assignment",
@@ -111,11 +111,11 @@ const ServiceDetailPage = ({ slug }: { slug: string }) => {
   useEffect(() => {
     const load = async () => {
       if (!config) return;
-      // Find category id by name
+      // Find category id by keyword — ilike avoids exact-name fragility
       const { data: cats } = await supabase
         .from("categories")
         .select("id")
-        .eq("name", config.categoryName)
+        .ilike("name", `%${config.categoryKeyword}%`)
         .eq("is_visible", true)
         .limit(1);
 

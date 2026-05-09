@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Phone } from "lucide-react";
 import HdiLogo from "./HdiLogo";
 
 const Footer = () => (
@@ -26,6 +27,13 @@ const Footer = () => (
           <p className="text-sm leading-relaxed max-w-sm font-sans">
             Specialist-driven digital services for dentistry and healthcare. Every case reviewed by a qualified professional.
           </p>
+          <a
+            href="tel:+971541611475"
+            className="inline-flex items-center gap-2 mt-4 text-sm font-sans text-hdi-sky/60 hover:text-hdi-teal-light transition-colors"
+          >
+            <Phone size={13} />
+            +971 54 161 1475
+          </a>
         </div>
 
         {/* Services */}

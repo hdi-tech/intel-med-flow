@@ -73,14 +73,13 @@ const SubmitCase = () => {
   // Load categories and services (no auth needed)
   useEffect(() => {
     const load = async () => {
-      const { data: cats, error: catsErr } = await supabase.from("categories").select("id, name").eq("is_visible", true).order("sort_order");
+      const { data: cats, error: catsErr } = await supabase.from("categories").select("id, name").order("sort_order");
       if (catsErr) console.error("Failed to load categories:", catsErr);
       setCategories(cats || []);
       const { data: svcs, error: svcsErr } = await supabase
         .from("services")
         .select("id, code, name, price_usd, category_id, is_custom_quote, price_type, price_min_usd, price_max_usd")
         .eq("is_active", true)
-        .eq("is_visible", true)
         .order("code");
       if (svcsErr) console.error("Failed to load services:", svcsErr);
       setServices((svcs || []) as unknown as Service[]);

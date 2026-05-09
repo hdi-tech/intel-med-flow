@@ -41,7 +41,6 @@ const Pricing = () => {
           .from("services")
           .select("id, code, name, price_usd, is_custom_quote, price_type, price_min_usd, price_max_usd, quote_note, category_id")
           .eq("is_active", true)
-          .eq("is_visible", true)
           .order("code"),
       ]);
       const services = (svcs || []) as unknown as PricingService[];

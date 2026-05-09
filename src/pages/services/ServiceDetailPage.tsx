@@ -125,7 +125,6 @@ const ServiceDetailPage = ({ slug }: { slug: string }) => {
           .select("id, code, name, description, is_custom_quote, price_usd, price_type, price_min_usd, price_max_usd, quote_note")
           .eq("category_id", cats[0].id)
           .eq("is_active", true)
-          .eq("is_visible", true)
           .order("code");
         if (svcs) setServices(svcs as unknown as ServiceRow[]);
       }

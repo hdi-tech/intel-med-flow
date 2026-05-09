@@ -116,7 +116,6 @@ const ServiceDetailPage = ({ slug }: { slug: string }) => {
         .from("categories")
         .select("id")
         .ilike("name", `%${config.categoryKeyword}%`)
-        .eq("is_visible", true)
         .limit(1);
 
       if (cats && cats.length > 0) {

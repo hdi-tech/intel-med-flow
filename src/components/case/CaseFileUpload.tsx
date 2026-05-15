@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,38 +15,58 @@ export default function CaseFileUpload({ caseId, userId, uploaderRole, onUploade
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 1073741824; // 1 GB
+
+  const resetInput = () => {
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
   const handleUpload = async () => {
     if (files.length === 0) return;
-    setUploading(true);
-
-    for (const file of files) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${userId}/${caseId}/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from("case-files").upload(path, file);
-      if (error) { console.error(error); continue; }
-
-      await supabase.from("case_files").insert({
-        case_id: caseId,
-        file_name: file.name,
-        file_url: path,
-        uploaded_by: userId,
-        uploader_role: uploaderRole,
-      } as any);
-
-      // Post system message
-      await supabase.from("case_messages").insert({
-        case_id: caseId,
-        sender_id: userId,
-        sender_role: uploaderRole,
-        message: `📎 ${uploaderRole.toUpperCase()} added ${file.name} to this case`,
+    const tooBig = files.filter((f) => f.size > MAX_FILE_SIZE);
+    if (tooBig.length > 0) {
+      toast({
+        title: "File too large",
+        description: `${tooBig.map((f) => f.name).join(", ")} exceeds the 1 GB limit.`,
+        variant: "destructive",
       });
+      setFiles(files.filter((f) => f.size <= MAX_FILE_SIZE));
+      return;
     }
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${userId}/${caseId}/${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("case-files").upload(path, file);
+        if (error) { console.error(error); continue; }
 
-    toast({ title: "File uploaded successfully" });
-    setFiles([]);
-    setUploading(false);
-    onUploaded();
+        await supabase.from("case_files").insert({
+          case_id: caseId,
+          file_name: file.name,
+          file_url: path,
+          uploaded_by: userId,
+          uploader_role: uploaderRole,
+        } as any);
+
+        await supabase.from("case_messages").insert({
+          case_id: caseId,
+          sender_id: userId,
+          sender_role: uploaderRole,
+          message: `📎 ${uploaderRole.toUpperCase()} added ${file.name} to this case`,
+        });
+      }
+      toast({ title: "File uploaded successfully" });
+      onUploaded();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err?.message ?? "Please try again.", variant: "destructive" });
+    } finally {
+      setFiles([]);
+      resetInput();
+      setUploading(false);
+    }
   };
 
   return (
@@ -57,13 +77,21 @@ export default function CaseFileUpload({ caseId, userId, uploaderRole, onUploade
       <div
         className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 cursor-pointer transition-colors"
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); setFiles(Array.from(e.dataTransfer.files)); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const dropped = Array.from(e.dataTransfer.files);
+          const tooBig = dropped.filter((f) => f.size > MAX_FILE_SIZE);
+          if (tooBig.length > 0) {
+            toast({ title: "File too large", description: `${tooBig.map((f) => f.name).join(", ")} exceeds the 1 GB limit.`, variant: "destructive" });
+          }
+          setFiles(dropped.filter((f) => f.size <= MAX_FILE_SIZE));
+        }}
         onClick={() => document.getElementById(`file-upload-${caseId}`)?.click()}
       >
         <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
         <p className="text-sm font-sans text-foreground">Drag & drop or click to browse</p>
-        <p className="text-xs font-sans text-muted-foreground mt-1">STL, DCM, ZIP, PDF, JPG, PNG · Max 500MB per file</p>
-        <input id={`file-upload-${caseId}`} type="file" multiple className="hidden" accept=".stl,.dcm,.zip,.pdf,.jpg,.jpeg,.png" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+        <p className="text-xs font-sans text-muted-foreground mt-1">All file formats accepted — Max 1 GB per file</p>
+        <input ref={inputRef} id={`file-upload-${caseId}`} type="file" multiple className="hidden" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
       </div>
 
       {files.length > 0 && (

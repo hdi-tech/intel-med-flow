@@ -3,6 +3,7 @@ import { Send, Paperclip, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadCaseFile } from "@/lib/storageHelpers";
 import { sendEmail } from "@/lib/emailHelpers";
+import { useToast } from "@/hooks/use-toast";
 
 export interface CaseMessageItem {
   id: string;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export default function CaseMessageThread({ caseId, userId, senderRole, messages, title = "Messages", maxHeight = "500px", caseData }: Props) {
+  const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [attachFile, setAttachFile] = useState<File | null>(null);
@@ -42,16 +44,17 @@ export default function CaseMessageThread({ caseId, userId, senderRole, messages
 
     let attachmentName: string | null = null;
     let attachmentUrl: string | null = null;
+    const msgTextSnapshot = newMessage.trim();
 
-    if (attachFile) {
-      const safeName = attachFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${userId}/${caseId}/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from("case-files").upload(path, attachFile);
-      if (!error) {
+    try {
+      if (attachFile) {
+        const safeName = attachFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${userId}/${caseId}/${Date.now()}_${safeName}`;
+        const { error: uploadError } = await supabase.storage.from("case-files").upload(path, attachFile);
+        if (uploadError) throw uploadError;
         attachmentUrl = path;
         attachmentName = attachFile.name;
 
-        // Also insert into case_files
         await supabase.from("case_files").insert({
           case_id: caseId,
           file_name: attachFile.name,
@@ -60,35 +63,33 @@ export default function CaseMessageThread({ caseId, userId, senderRole, messages
           uploader_role: senderRole,
         } as any);
       }
-    }
 
-    const msgText = newMessage.trim() || (attachmentName ? `📎 Attached: ${attachmentName}` : "");
-    if (msgText) {
-      await supabase.from("case_messages").insert({
-        case_id: caseId,
-        sender_id: userId,
-        sender_role: senderRole,
-        message: attachmentName ? `${msgText}\n__ATTACHMENT__${attachmentName}__${attachmentUrl}__` : msgText,
-      });
-    }
+      const msgText = msgTextSnapshot || (attachmentName ? `📎 Attached: ${attachmentName}` : "");
+      if (msgText) {
+        const { error: insertError } = await supabase.from("case_messages").insert({
+          case_id: caseId,
+          sender_id: userId,
+          sender_role: senderRole,
+          message: attachmentName ? `${msgText}\n__ATTACHMENT__${attachmentName}__${attachmentUrl}__` : msgText,
+        });
+        if (insertError) throw insertError;
+      }
 
-    setNewMessage("");
-    setAttachFile(null);
-    setSending(false);
+      setNewMessage("");
+      setAttachFile(null);
 
-    // Send email notifications for new messages
-    const caseRef = `HDI-${caseId.substring(0, 8).toUpperCase()}`;
-    const preview = msgText.substring(0, 200);
-    if (senderRole === "designer" && caseData?.user_id) {
-      // Designer sent message → notify client
-      sendEmail("new-message-client", caseData.user_id, {
-        caseRef, caseId, preview,
-      });
-    } else if (senderRole === "client" && caseData?.assigned_designer_id) {
-      // Client sent message → notify designer
-      sendEmail("new-message-designer", caseData.assigned_designer_id, {
-        caseRef, caseId, preview,
-      });
+      // Send email notifications for new messages
+      const caseRef = `HDI-${caseId.substring(0, 8).toUpperCase()}`;
+      const preview = msgTextSnapshot.substring(0, 200);
+      if (senderRole === "designer" && caseData?.user_id) {
+        sendEmail("new-message-client", caseData.user_id, { caseRef, caseId, preview });
+      } else if (senderRole === "client" && caseData?.assigned_designer_id) {
+        sendEmail("new-message-designer", caseData.assigned_designer_id, { caseRef, caseId, preview });
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to send message", description: err?.message ?? "Please try again.", variant: "destructive" });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -165,7 +166,17 @@ export default function CaseMessageThread({ caseId, userId, senderRole, messages
             >
               <Paperclip size={16} className="text-muted-foreground" />
             </button>
-            <input id={`msg-attach-${caseId}`} type="file" className="hidden" accept=".stl,.dcm,.zip,.pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) setAttachFile(e.target.files[0]); e.target.value = ""; }} />
+            <input id={`msg-attach-${caseId}`} type="file" className="hidden" onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) {
+                if (f.size > 1073741824) {
+                  toast({ title: "File too large", description: `${f.name} exceeds the 1 GB limit.`, variant: "destructive" });
+                } else {
+                  setAttachFile(f);
+                }
+              }
+              e.target.value = "";
+            }} />
             <button
               onClick={handleSend}
               disabled={(!newMessage.trim() && !attachFile) || sending}

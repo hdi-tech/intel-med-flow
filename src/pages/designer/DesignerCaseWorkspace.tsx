@@ -223,54 +223,69 @@ const DesignerCaseWorkspace = () => {
     loadCase();
   };
 
+  const resetFileInput = (...inputIds: string[]) => {
+    inputIds.forEach((inputId) => {
+      const el = document.getElementById(inputId) as HTMLInputElement | null;
+      if (el) el.value = "";
+    });
+  };
+
   const handleUploadDesignForReview = async () => {
     if (!user || !id || designFiles.length === 0) return;
     setUploadingDesign(true);
-    for (const file of designFiles) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from("case-files").upload(path, file);
-      if (error) { console.error(error); continue; }
-      
-      await supabase.from("case_files").insert({
-        case_id: id, file_name: file.name, file_url: path,
-        uploaded_by: user.id, uploader_role: "designer", file_label: "Design File",
-      } as any);
+    try {
+      for (const file of designFiles) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("case-files").upload(path, file);
+        if (error) { console.error(error); continue; }
+
+        await supabase.from("case_files").insert({
+          case_id: id, file_name: file.name, file_url: path,
+          uploaded_by: user.id, uploader_role: "designer", file_label: "Design File",
+        } as any);
+      }
+      await changeStatus("design_review", `Uploaded ${designFiles.length} design file(s) for review`);
+      await supabase.from("case_messages").insert({
+        case_id: id, sender_id: user.id, sender_role: "designer",
+        message: `📐 Design files uploaded for review (${designFiles.length} file${designFiles.length > 1 ? "s" : ""}).`,
+      });
+      toast({ title: "Design uploaded for review" });
+      loadCase();
+    } finally {
+      setDesignFiles([]);
+      resetFileInput("design-upload", "design-upload-review");
+      setUploadingDesign(false);
     }
-    await changeStatus("design_review", `Uploaded ${designFiles.length} design file(s) for review`);
-    await supabase.from("case_messages").insert({
-      case_id: id, sender_id: user.id, sender_role: "designer",
-      message: `📐 Design files uploaded for review (${designFiles.length} file${designFiles.length > 1 ? "s" : ""}).`,
-    });
-    toast({ title: "Design uploaded for review" });
-    setDesignFiles([]);
-    setUploadingDesign(false);
-    loadCase();
   };
 
   const handleUploadRevision = async () => {
     if (!user || !id || designFiles.length === 0) return;
     setUploadingDesign(true);
-    for (const file of designFiles) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from("case-files").upload(path, file);
-      if (error) { console.error(error); continue; }
-      
-      await supabase.from("case_files").insert({
-        case_id: id, file_name: file.name, file_url: path,
-        uploaded_by: user.id, uploader_role: "designer", file_label: "Revised Design",
-      } as any);
+    try {
+      for (const file of designFiles) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("case-files").upload(path, file);
+        if (error) { console.error(error); continue; }
+
+        await supabase.from("case_files").insert({
+          case_id: id, file_name: file.name, file_url: path,
+          uploaded_by: user.id, uploader_role: "designer", file_label: "Revised Design",
+        } as any);
+      }
+      await changeStatus("design_review", `Uploaded ${designFiles.length} revised file(s)`);
+      await supabase.from("case_messages").insert({
+        case_id: id, sender_id: user.id, sender_role: "designer",
+        message: `🔄 Revised design files uploaded (${designFiles.length} file${designFiles.length > 1 ? "s" : ""}).`,
+      });
+      toast({ title: "Revised design uploaded" });
+      loadCase();
+    } finally {
+      setDesignFiles([]);
+      resetFileInput("revision-upload");
+      setUploadingDesign(false);
     }
-    await changeStatus("design_review", `Uploaded ${designFiles.length} revised file(s)`);
-    await supabase.from("case_messages").insert({
-      case_id: id, sender_id: user.id, sender_role: "designer",
-      message: `🔄 Revised design files uploaded (${designFiles.length} file${designFiles.length > 1 ? "s" : ""}).`,
-    });
-    toast({ title: "Revised design uploaded" });
-    setDesignFiles([]);
-    setUploadingDesign(false);
-    loadCase();
   };
 
   const handleMarkReady = async () => {
@@ -286,31 +301,35 @@ const DesignerCaseWorkspace = () => {
   const handleDeliverFiles = async () => {
     if (!user || !id || deliveryFiles.length === 0) return;
     setDelivering(true);
-    for (const file of deliveryFiles) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from("case-files").upload(path, file);
-      if (error) { console.error(error); continue; }
-      
-      await supabase.from("case_files").insert({
-        case_id: id, file_name: file.name, file_url: path,
-        uploaded_by: user.id, uploader_role: "designer", file_label: "Final Delivery",
+    try {
+      for (const file of deliveryFiles) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${user.id}/${id}/${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("case-files").upload(path, file);
+        if (error) { console.error(error); continue; }
+
+        await supabase.from("case_files").insert({
+          case_id: id, file_name: file.name, file_url: path,
+          uploaded_by: user.id, uploader_role: "designer", file_label: "Final Delivery",
+        } as any);
+      }
+      await supabase.from("cases").update({ status: "design_review" as any }).eq("id", id);
+      await supabase.from("case_status_history").insert({
+        case_id: id, old_status: caseData?.status, new_status: "design_review",
+        changed_by: user.id, changed_by_role: "designer",
+        notes: `Final files uploaded (${deliveryFiles.length} file${deliveryFiles.length > 1 ? "s" : ""}) — awaiting admin QC`,
       } as any);
+      await supabase.from("case_messages").insert({
+        case_id: id, sender_id: user.id, sender_role: "designer",
+        message: `📦 Final delivery files uploaded (${deliveryFiles.length} file${deliveryFiles.length > 1 ? "s" : ""}). Awaiting admin quality check.`,
+      });
+      toast({ title: "Files submitted for QC review", description: "Admin will review and deliver to client." });
+      loadCase();
+    } finally {
+      setDeliveryFiles([]);
+      resetFileInput("delivery-upload");
+      setDelivering(false);
     }
-    await supabase.from("cases").update({ status: "design_review" as any }).eq("id", id);
-    await supabase.from("case_status_history").insert({
-      case_id: id, old_status: caseData?.status, new_status: "design_review",
-      changed_by: user.id, changed_by_role: "designer",
-      notes: `Final files uploaded (${deliveryFiles.length} file${deliveryFiles.length > 1 ? "s" : ""}) — awaiting admin QC`,
-    } as any);
-    await supabase.from("case_messages").insert({
-      case_id: id, sender_id: user.id, sender_role: "designer",
-      message: `📦 Final delivery files uploaded (${deliveryFiles.length} file${deliveryFiles.length > 1 ? "s" : ""}). Awaiting admin quality check.`,
-    });
-    toast({ title: "Files submitted for QC review", description: "Admin will review and deliver to client." });
-    setDeliveryFiles([]);
-    setDelivering(false);
-    loadCase();
   };
 
   if (loading) {
@@ -346,13 +365,28 @@ const DesignerCaseWorkspace = () => {
       <div
         className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 cursor-pointer transition-colors"
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); setFileState(Array.from(e.dataTransfer.files)); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const files = Array.from(e.dataTransfer.files);
+          const tooBig = files.filter((f) => f.size > 1073741824);
+          if (tooBig.length > 0) {
+            toast({ title: "File too large", description: `${tooBig.map((f) => f.name).join(", ")} exceeds the 1 GB limit.`, variant: "destructive" });
+          }
+          setFileState(files.filter((f) => f.size <= 1073741824));
+        }}
         onClick={() => document.getElementById(inputId)?.click()}
       >
         <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
         <p className="text-sm font-sans text-foreground">Drag & drop or click to browse</p>
-        <p className="text-xs font-sans text-muted-foreground mt-1">STL, DCM, ZIP, PDF, JPG, PNG</p>
-        <input id={inputId} type="file" multiple className="hidden" accept=".stl,.dcm,.zip,.pdf,.jpg,.jpeg,.png" onChange={(e) => setFileState(Array.from(e.target.files || []))} />
+        <p className="text-xs font-sans text-muted-foreground mt-1">All file formats accepted — Max 1 GB per file</p>
+        <input id={inputId} type="file" multiple className="hidden" onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          const tooBig = files.filter((f) => f.size > 1073741824);
+          if (tooBig.length > 0) {
+            toast({ title: "File too large", description: `${tooBig.map((f) => f.name).join(", ")} exceeds the 1 GB limit.`, variant: "destructive" });
+          }
+          setFileState(files.filter((f) => f.size <= 1073741824));
+        }} />
       </div>
       {fileState.length > 0 && (
         <div className="mt-3 space-y-3">

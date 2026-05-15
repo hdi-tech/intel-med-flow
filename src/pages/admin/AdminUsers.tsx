@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
 import { formatDate } from "@/lib/caseHelpers";
-import { Search, Edit2, Users as UsersIcon, Mail, X, Check, Download } from "lucide-react";
+import { Search, Edit2, Mail, Download } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -58,7 +58,7 @@ const AdminUsers = () => {
 
   // Edit role modal
   const [editUser, setEditUser] = useState<UserProfile | null>(null);
-  const [newRole, setNewRole] = useState("");
+  const [newRoles, setNewRoles] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Account manager assignment
@@ -120,7 +120,7 @@ const AdminUsers = () => {
 
   const openEditRole = async (u: UserProfile) => {
     setEditUser(u);
-    setNewRole(u.roles[0] || "client");
+    setNewRoles(u.roles.length > 0 ? [...u.roles] : ["client"]);
     setClientSearch("");
     setAllClients([]);
     setAssignClients([]);
@@ -152,21 +152,19 @@ const AdminUsers = () => {
 
   const handleSaveRole = async () => {
     if (!editUser || !user) return;
+    if (newRoles.length === 0) {
+      toast({ title: "Select at least one role", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     try {
-      // Remove existing roles for user
       await supabase.from("user_roles").delete().eq("user_id", editUser.id);
-      // Insert new role
-      await supabase.from("user_roles").insert({ user_id: editUser.id, role: newRole as any });
+      await supabase.from("user_roles").insert(newRoles.map(role => ({ user_id: editUser.id, role: role as any })));
 
-      // Handle AM assignments
-      if (newRole === "account_manager") {
-        // Remove old assignments
+      if (newRoles.includes("account_manager")) {
         await supabase.from("account_manager_assignments").delete().eq("account_manager_id", editUser.id);
-        // Insert new
         if (assignClients.length > 0) {
-          // First remove these clients from other managers
           for (const clientId of assignClients) {
             await supabase.from("account_manager_assignments").delete().eq("client_id", clientId);
           }
@@ -180,11 +178,11 @@ const AdminUsers = () => {
         }
       }
 
-      toast({ title: "Role updated", description: `${editUser.full_name}'s role changed to ${newRole}` });
+      toast({ title: "Roles updated", description: `${editUser.full_name}: ${newRoles.join(", ")}` });
       setEditUser(null);
       load();
     } catch (err) {
-      toast({ title: "Error", description: "Failed to update role", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update roles", variant: "destructive" });
     }
     setSaving(false);
   };
@@ -439,13 +437,27 @@ const AdminUsers = () => {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <label className="block text-sm font-medium mb-1">Role</label>
-              <select className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
-                {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
+              <label className="block text-sm font-medium mb-2">Roles</label>
+              <div className="space-y-2 border border-input rounded-lg p-3">
+                {ROLE_OPTIONS.map(r => (
+                  <label key={r.value} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={newRoles.includes(r.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) setNewRoles(prev => [...prev, r.value]);
+                        else setNewRoles(prev => prev.filter(role => role !== r.value));
+                      }}
+                      className="rounded"
+                    />
+                    <span className={`inline-block text-[10px] font-semibold uppercase px-2 py-0.5 rounded ${ROLE_COLORS[r.value] || ROLE_COLORS.client}`}>{r.label}</span>
+                  </label>
+                ))}
+              </div>
+              {newRoles.length === 0 && <p className="text-xs text-destructive mt-1">Select at least one role</p>}
             </div>
 
-             {newRole === "account_manager" && (
+             {newRoles.includes("account_manager") && (
               <div>
                 <label className="block text-sm font-medium mb-1">Assign Client Accounts</label>
                 <input

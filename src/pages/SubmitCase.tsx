@@ -113,11 +113,28 @@ const SubmitCase = () => {
     return deliveryType === "rush" ? base * 1.2 : base;
   };
 
+  const MAX_FILE_SIZE = 1073741824; // 1 GB
+
   const handleFileAdd = useCallback((files: FileList | null) => {
     if (!files) return;
-    const newFiles: UploadedFile[] = Array.from(files).map((f) => ({ file: f, label: f.name, progress: 100 }));
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-  }, []);
+    const tooBig: string[] = [];
+    const valid: UploadedFile[] = [];
+    Array.from(files).forEach((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        tooBig.push(f.name);
+      } else {
+        valid.push({ file: f, label: f.name, progress: 100 });
+      }
+    });
+    if (tooBig.length > 0) {
+      toast({
+        title: "File too large",
+        description: `${tooBig.join(", ")} exceeds the 1 GB limit.`,
+        variant: "destructive",
+      });
+    }
+    if (valid.length > 0) setUploadedFiles((prev) => [...prev, ...valid]);
+  }, [toast]);
 
   const removeFile = (idx: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== idx));
@@ -508,14 +525,13 @@ const SubmitCase = () => {
                 <Upload size={32} className="mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm font-sans text-foreground font-medium">Drag and drop files here</p>
                 <p className="text-xs font-sans text-muted-foreground mt-1">
-                  STL, DCM, DICOM, ZIP, PDF, JPG, PNG — Max 500MB per file
+                  All file formats accepted — Max 1 GB per file
                 </p>
                 <input
                   id="file-input"
                   type="file"
                   multiple
                   className="hidden"
-                  accept=".stl,.dcm,.dicom,.zip,.pdf,.jpg,.jpeg,.png"
                   onChange={(e) => handleFileAdd(e.target.files)}
                 />
               </div>
